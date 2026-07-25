@@ -1,0 +1,50 @@
+{
+  "chart": {
+    "labels": [
+      "2026-07-24"
+    ],
+    "cum_invested": [
+      600.0
+    ],
+    "value": [
+      587.34
+    ],
+    "pnl": [
+      -12.66
+    ],
+    "pnl_pct": [
+      -0.021094
+    ],
+    "daily_return": [
+      0.0
+    ],
+    "months": [
+      {
+        "value": "2026-07",
+        "label": "2026-07"
+      }
+    ]
+  },
+  "latest": {
+    "date": "2026-07-24",
+    "opens": {
+      "QQQ": 690.41,
+      "QLD": 84.54,
+      "TQQQ": 65.78
+    },
+    "closes": {
+      "QQQ": 684.23,
+      "QLD": 83.0,
+      "TQQQ": 64.0
+    },
+    "cum_cny_invested": 600.0,
+    "total_cny_value": 587.34,
+    "pnl_cny": -12.66,
+    "pnl_ratio": -0.021094,
+    "shares": {
+      "QQQ": 0.020117,
+      "QLD": 0.328576,
+      "TQQQ": 0.633425
+    }
+  }
+}

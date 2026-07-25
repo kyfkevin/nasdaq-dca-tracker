@@ -1,0 +1,78 @@
+name: Update DCA tracker
+
+on:
+  schedule:
+    # US market closes at 16:00 ET. We run at 21:30 UTC = 16:30 ET (winter) or 17:30 ET (summer)
+    # This catches the close + 30min buffer on US trading days (Mon-Fri)
+    # Excluding US market holidays is handled by the script (it will just refetch same day)
+    - cron: "30 21 * * 1-5"
+  workflow_dispatch:  # allow manual run
+  push:
+    branches: [main]
+    paths:
+      - "fetch_data.py"
+      - "dca_engine.py"
+      - "build_site.py"
+      - ".github/workflows/update.yml"
+
+permissions:
+  contents: write
+  pages: write
+  id-token: write
+
+# Avoid two runs colliding on the same day
+concurrency:
+  group: dca-update
+  cancel-in-progress: false
+
+jobs:
+  update:
+    name: Fetch prices & rebuild site
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: pip
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install pandas
+
+      - name: Fetch latest prices
+        run: python fetch_data.py
+
+      - name: Run DCA engine
+        run: python dca_engine.py
+
+      - name: Build static site
+        run: python build_site.py
+
+      - name: Setup Pages
+        uses: actions/configure-pages@v4
+
+      - name: Upload artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: site
+
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
+
+      - name: Commit updated CSVs back to repo
+        run: |
+          git config user.name "DCA Bot"
+          git config user.email "action@github.com"
+          git add data/ site/data.json
+          if git diff --staged --quiet; then
+            echo "No data changes to commit"
+          else
+            git commit -m "chore: auto-update DCA prices ($(date -u +%Y-%m-%d))"
+            git push
+          fi
