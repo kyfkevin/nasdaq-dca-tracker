@@ -92,9 +92,10 @@ def append_to_csv(records: dict[str, dict]):
             df["date"] = pd.to_datetime(df["date"])
         rec_date = pd.to_datetime(rec["date"]).normalize()
         # overwrite today's row if it exists (intraday update)
-        df = df[df["date"].dt.normalize() != rec_date]
+        # Use date-string comparison (avoids str vs Timestamp mix)
+        df = df[df["date"].dt.strftime("%Y-%m-%d") != rec_date.strftime("%Y-%m-%d")]
         new_row = {
-            "date":       rec["date"],
+            "date":       pd.to_datetime(rec["date"]),
             "open":       rec["open"],
             "high":       rec["high"],
             "low":        rec["low"],
