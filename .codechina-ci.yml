@@ -1,0 +1,18 @@
+# GitCode Pages - Static HTML deployment
+# https://docs.gitcode.com/docs/user/pages
+# 关键: job 名必须是 "pages", artifacts 必须输出到 "public"
+stages:
+  - deploy
+
+pages:
+  stage: deploy
+  image: alpine:latest
+  script:
+    - mkdir -p public
+    - cp -r ./* public/ 2>/dev/null || true
+    - ls -la public/
+  artifacts:
+    paths:
+      - public
+  only:
+    - main
