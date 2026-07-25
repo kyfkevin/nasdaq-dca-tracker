@@ -151,8 +151,6 @@ def render_html(chart_data, opens, closes, last,
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>每日定投追踪 · QQQ/QLD/TQQQ</title>
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
-  <link rel="preconnect" href="https://fonts.googleapis.com" />
-  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
   <style>
     :root {{
       --bg: #f6f4ee;
