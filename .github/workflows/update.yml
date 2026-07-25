@@ -51,7 +51,7 @@ jobs:
       - name: Build static site
         run: python build_site.py
 
-      - name: Deploy site/ to gh-pages branch
+      - name: Deploy site/ to gh-pages branch (GitHub Pages)
         uses: peaceiris/actions-gh-pages@v4
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
@@ -60,3 +60,23 @@ jobs:
           force_orphan: true
           keep_files: false
           commit_message: "chore: deploy site ${{ github.run_number }} (${{ github.sha }})"
+
+      - name: Deploy site/ to GitCode Pages
+        env:
+          GITCODE_TOKEN: ${{ secrets.GITCODE_TOKEN }}
+        run: |
+          set -e
+          if [ -z "$GITCODE_TOKEN" ]; then
+            echo "GITCODE_TOKEN not set, skipping GitCode deploy"
+            exit 0
+          fi
+          # init a temporary repo, set remote, push to GitCode
+          cd site
+          git init
+          git config user.name "DCA Bot"
+          git config user.email "action@github.com"
+          git checkout -b pages
+          git add -A
+          git commit -m "chore: deploy site ${{ github.run_number }} (${{ github.sha }})"
+          git push -f "https://oauth2:${GITCODE_TOKEN}@gitcode.net/kyfkevin/nasdaq-dca-tracker.git" pages:pages
+          echo "Pushed to GitCode: https://kyfkevin.gitcode.io/nasdaq-dca-tracker/"
