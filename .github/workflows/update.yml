@@ -2,7 +2,7 @@ name: Update DCA tracker
 
 on:
   schedule:
-    # US market closes at 16:00 ET. We run at 21:30 UTC = 16:30 ET (winter) or
+    # US market closes at 16:00 ET.  We run at 21:30 UTC = 16:30 ET (winter) or
     # 17:30 ET (summer).  This catches the close + 30min buffer on US
     # trading days (Mon-Fri).  Holidays are handled by the script
     # (it just refetches the same previous-trading-day data, which is fine).
@@ -18,8 +18,6 @@ on:
 
 permissions:
   contents: write
-  pages: write
-  id-token: write
 
 # Prevent concurrent runs from racing
 concurrency:
@@ -53,22 +51,12 @@ jobs:
       - name: Build static site
         run: python build_site.py
 
-      - name: Upload Pages artifact
-        uses: actions/upload-pages-artifact@v3
+      - name: Deploy site/ to gh-pages branch
+        uses: peaceiris/actions-gh-pages@v4
         with:
-          path: site
-
-  deploy:
-    name: Deploy to GitHub Pages
-    needs: build
-    runs-on: ubuntu-latest
-    environment:
-      name: github-pages
-      url: ${{ steps.deployment.outputs.page_url }}
-    permissions:
-      pages: write
-      id-token: write
-    steps:
-      - name: Deploy to GitHub Pages
-        id: deployment
-        uses: actions/deploy-pages@v4
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: ./site
+          publish_branch: gh-pages
+          force_orphan: true
+          keep_files: false
+          commit_message: "chore: deploy site ${{ github.run_number }} (${{ github.sha }})"
