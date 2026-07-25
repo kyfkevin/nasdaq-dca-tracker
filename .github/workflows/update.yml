@@ -2,9 +2,10 @@ name: Update DCA tracker
 
 on:
   schedule:
-    # US market closes at 16:00 ET. We run at 21:30 UTC = 16:30 ET (winter) or 17:30 ET (summer)
-    # This catches the close + 30min buffer on US trading days (Mon-Fri)
-    # Excluding US market holidays is handled by the script (it will just refetch same day)
+    # US market closes at 16:00 ET. We run at 21:30 UTC = 16:30 ET (winter) or
+    # 17:30 ET (summer).  This catches the close + 30min buffer on US
+    # trading days (Mon-Fri).  Holidays are handled by the script
+    # (it just refetches the same previous-trading-day data, which is fine).
     - cron: "30 21 * * 1-5"
   workflow_dispatch:  # allow manual run
   push:
@@ -20,13 +21,13 @@ permissions:
   pages: write
   id-token: write
 
-# Avoid two runs colliding on the same day
+# Prevent concurrent runs from racing
 concurrency:
   group: dca-update
   cancel-in-progress: false
 
 jobs:
-  update:
+  build:
     name: Fetch prices & rebuild site
     runs-on: ubuntu-latest
     steps:
@@ -53,26 +54,22 @@ jobs:
       - name: Build static site
         run: python build_site.py
 
-      - name: Setup Pages
-        uses: actions/configure-pages@v4
-
-      - name: Upload artifact
+      - name: Upload Pages artifact
         uses: actions/upload-pages-artifact@v3
         with:
           path: site
 
+  deploy:
+    name: Deploy to GitHub Pages
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    permissions:
+      pages: write
+      id-token: write
+    steps:
       - name: Deploy to GitHub Pages
         id: deployment
         uses: actions/deploy-pages@v4
-
-      - name: Commit updated CSVs back to repo
-        run: |
-          git config user.name "DCA Bot"
-          git config user.email "action@github.com"
-          git add data/ site/data.json
-          if git diff --staged --quiet; then
-            echo "No data changes to commit"
-          else
-            git commit -m "chore: auto-update DCA prices ($(date -u +%Y-%m-%d))"
-            git push
-          fi
