@@ -7,6 +7,19 @@ on:
   workflow_dispatch:
   push:
     branches: [main]
+    paths:
+      - 'site/**'
+      - '.github/workflows/update.yml'
+      - 'fetch_data.py'
+      - 'dca_engine.py'
+      - 'build_site.py'
+
+permissions:
+  contents: write
+
+concurrency:
+  group: dca-update
+  cancel-in-progress: false
 
 jobs:
   update:
@@ -15,6 +28,8 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
       - name: Setup Python
         uses: actions/setup-python@v5
@@ -24,26 +39,32 @@ jobs:
       - name: Install deps
         run: pip install requests pandas
 
-      - name: Fetch data + compute DCA
+      - name: Fetch data + compute DCA + build site
         run: |
-          cd $GITHUB_WORKSPACE
           python fetch_data.py
           python dca_engine.py
           python build_site.py
 
-      - name: Deploy to GitHub Pages
+      - name: Deploy to GitHub Pages (gh-pages)
         uses: peaceiris/actions-gh-pages@v4
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
           publish_dir: ./site
           publish_branch: gh-pages
           force_orphan: true
+          keep_files: false
 
-      - name: Push to GitCode
+      - name: Push site to GitCode (main)
+        env:
+          GITCODE_TOKEN: ${{ secrets.GITCODE_TOKEN }}
         run: |
+          if [ -z "$GITCODE_TOKEN" ]; then
+            echo "No GITCODE_TOKEN, skipping"
+            exit 0
+          fi
           git config user.name "kyfkevin"
           git config user.email "kyfkevin@users.noreply.gitcode.net"
-          git remote add gitcode "https://oauth2:${{ secrets.GITCODE_TOKEN }}@gitcode.net/kyfkevin/nasdaq-dca-tracker.git" 2>/dev/null || true
+          git remote add gitcode "https://oauth2:${GITCODE_TOKEN}@gitcode.net/kyfkevin/nasdaq-dca-tracker.git" 2>/dev/null || git remote set-url gitcode "https://oauth2:${GITCODE_TOKEN}@gitcode.net/kyfkevin/nasdaq-dca-tracker.git"
           git add site/index.html site/data.json
-          git commit -m "chore: daily update [skip ci]" || echo "no changes"
-          git push gitcode HEAD:main
+          git commit -m "chore: daily update $(date +%F)" || echo "no changes"
+          git push gitcode HEAD:main || echo "gitcode push failed, continuing"
